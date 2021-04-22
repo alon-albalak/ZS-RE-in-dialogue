@@ -1,5 +1,6 @@
 import logging
 import json
+import random
 from torch.utils.data import Dataset
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ def rename(d, x, y):
     return d, x, y
 
 
-def load_dialogRE_relation_extraction(relations, templates, data_path="data_v2/full_dataset_with_identifiers.json", rename_entities=True, include_negative_samples=True, lowercase=False):
+def load_dialogRE_relation_extraction(relations, templates, data_path="data_v2/full_dataset_with_identifiers.json", rename_entities=True, include_negative_samples=True, lowercase=False, num_negative_samples=3):
     logger.info(f"Loading relations {relations} from {data_path}")
     data = json.load(open(data_path))
 
@@ -132,6 +133,8 @@ def load_dialogRE_relation_extraction(relations, templates, data_path="data_v2/f
                     if relation not in entity_pair["r"]:
                         prompts = templates.fill_in_template(
                             relation, head, tail)
+                        prompts = random.sample(prompts, min(
+                            len(prompts), num_negative_samples))
                         for p in prompts:
                             num_neg += 1
                             samples.append(

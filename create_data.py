@@ -14,7 +14,7 @@ def create_data(tokenizer, relations, templates, **kwargs):
     """
 
     samples = data_utils.load_dialogRE_relation_extraction(
-        relations, templates)
+        relations, templates, num_negative_samples=kwargs['num_negative_samples'])
     features = data_utils.convert_samples_to_features(
         samples, kwargs['max_sequence_len'], tokenizer)
 

@@ -75,6 +75,7 @@ def parse_args():
     parser.add_argument("--data_path", type=str,
                         default="data_v2/full_dataset_with_identifiers.json")
     parser.add_argument("--data_split", type=int, default=3)
+    parser.add_argument("--num_negative_samples", type=int, default=3)
     # misc. args
     parser.add_argument("--debugging", action="store_true")
 
