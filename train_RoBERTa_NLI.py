@@ -6,6 +6,7 @@ from tqdm import tqdm
 from utils import utils
 from create_data import get_data
 import torch
+from transformers import get_linear_schedule_with_warmup
 
 # Setup logging
 logger = logging.getLogger()
@@ -62,6 +63,12 @@ def main(**kwargs):
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=kwargs["learning_rate"])
 
+    if kwargs['warmup_proportion'] > 0:
+        num_warmup_steps = total_optimization_steps*kwargs['warmup_proportion']
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=total_optimization_steps)
+        # scheduler.verbose = True
+
     if kwargs["fp16"]:
         scaler = torch.cuda.amp.GradScaler()
 
@@ -96,6 +103,7 @@ def main(**kwargs):
                     loss = torch.sum(per_sample_loss)
                     loss = loss/gradient_accumulation_steps
                 scaler.scale(loss).backward()
+                total_loss += loss.item()
 
                 if ((step + 1) % gradient_accumulation_steps) == 0:
                     scaler.unscale_(optimizer)
@@ -103,6 +111,8 @@ def main(**kwargs):
                         model.parameters(), kwargs["max_grad_norm"])
                     scaler.step(optimizer)
                     scaler.update()
+                    if kwargs['warmup_proportion'] > 0:
+                        scheduler.step()
                     optimizer.zero_grad()
             else:
                 per_sample_loss = model.calculate_loss(
@@ -114,12 +124,14 @@ def main(**kwargs):
                 loss = torch.sum(per_sample_loss)
                 loss = loss/gradient_accumulation_steps
                 loss.backward()
+                total_loss += loss.item()
                 torch.nn.utils.clip_grad_norm_(
                     model.parameters(), kwargs["max_grad_norm"])
                 if ((step + 1) % gradient_accumulation_steps) == 0:
                     optimizer.step()
+                    if kwargs['warmup_proportion'] > 0:
+                        scheduler.step()
                     optimizer.zero_grad()
-            total_loss += loss.item()
 
             desc = f"TRAIN LOSS: {total_loss/(step+1):0.4f}"
             pbar.set_description(desc)
@@ -165,6 +177,4 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     args = utils.parse_args()
-    args['debugging'] = True
-    args['pos_sample_weight'] = 2
     main(**args)

@@ -61,7 +61,7 @@ def parse_args():
     parser.add_argument("--dropout_rate", type=float, default=0.1)
 
     # training args
-    parser.add_argument("-e", "--num_epochs", type=int, default=20)
+    parser.add_argument("-e", "--num_epochs", type=int, default=5)
     parser.add_argument("--effective_batch_size", type=int, default=28)
     parser.add_argument("--gpu_batch_size", type=int, default=7)
     parser.add_argument("-lr", "--learning_rate", type=float, default=3e-5)
@@ -69,6 +69,7 @@ def parse_args():
     parser.add_argument("--pos_sample_weight", type=int, default=1)
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--output_dir", type=str, default="")
+    parser.add_argument("--warmup_proportion", type=float, default=0.)
 
     # data args
     parser.add_argument("--data_path", type=str,
