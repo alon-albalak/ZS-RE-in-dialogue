@@ -66,6 +66,7 @@ def parse_args():
     parser.add_argument("--gpu_batch_size", type=int, default=7)
     parser.add_argument("-lr", "--learning_rate", type=float, default=3e-5)
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
+    parser.add_argument("--pos_sample_weight", type=int, default=1)
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--output_dir", type=str, default="")
 

@@ -34,7 +34,7 @@ def main(**kwargs):
 
     if kwargs['debugging']:
         train_relations = [
-            'per:positive_impression', 'per:employee_or_member_of', 'per:place_of_birth', 'per:visited_place']
+            'per:positive_impression', 'per:employee_or_member_of']  # , 'per:place_of_birth', 'per:visited_place']
         dev_relations = ['per:acquaintance', 'per:alumni']
     else:
         data_splits = json.load(open("data_v2/data_splits.json"))
@@ -89,6 +89,10 @@ def main(**kwargs):
                 with torch.cuda.amp.autocast():
                     per_sample_loss = model.calculate_loss(
                         input_ids, attention_mask, labels)
+                    if kwargs['pos_sample_weight'] > 1:
+                        sample_weight = labels*kwargs['pos_sample_weight']
+                        sample_weight = torch.clamp(sample_weight, min=1.0)
+                        per_sample_loss = per_sample_loss*sample_weight
                     loss = torch.sum(per_sample_loss)
                     loss = loss/gradient_accumulation_steps
                 scaler.scale(loss).backward()
@@ -103,6 +107,10 @@ def main(**kwargs):
             else:
                 per_sample_loss = model.calculate_loss(
                     input_ids, attention_mask, labels)
+                if kwargs['pos_sample_weight'] > 1:
+                    sample_weight = labels*kwargs['pos_sample_weight']
+                    sample_weight = torch.clamp(sample_weight, min=1.0)
+                    per_sample_loss = per_sample_loss*sample_weight
                 loss = torch.sum(per_sample_loss)
                 loss = loss/gradient_accumulation_steps
                 loss.backward()
@@ -157,4 +165,6 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     args = utils.parse_args()
+    args['debugging'] = True
+    args['pos_sample_weight'] = 2
     main(**args)
